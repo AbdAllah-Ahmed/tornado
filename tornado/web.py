@@ -871,7 +871,7 @@ class RequestHandler(object):
                 raise HTTPError(405)
             # If XSRF cookies are turned on, reject form submissions without
             # the proper cookie
-            if self.request.method == "POST" and \
+            if self.request.method not in ("GET", "HEAD", "OPTIONS") and \
                self.application.settings.get("xsrf_cookies"):
                 self.check_xsrf_cookie()
             self.prepare()
@@ -1026,10 +1026,12 @@ def removeslash(method):
         if self.request.path.endswith("/"):
             if self.request.method in ("GET", "HEAD"):
                 uri = self.request.path.rstrip("/")
-                if self.request.query: uri += "?" + self.request.query
-                self.redirect(uri)
-                return
-            raise HTTPError(404)
+                if uri:  # don't try to redirect '/' to ''
+                    if self.request.query: uri += "?" + self.request.query
+                    self.redirect(uri)
+                    return
+            else:
+                raise HTTPError(404)
         return method(self, *args, **kwargs)
     return wrapper
 
